@@ -1,15 +1,67 @@
+from typing import List
 import numpy as np
+import generator
+import ag_tra
 
 
 class BWTstore:
     def __init__(self, seq) -> None:
-        lc = list("$" + seq)
-        fc = list(seq + "$")
-        self.po = np.argsort(fc)
-        self.lc = np.array(lc)[self.po]
+        seq_r = seq[::-1]
+        fc = np.array(list("$" + seq_r))
+        lc = np.array(list(seq_r + "$"))
 
-        # print(sorted(fc))
-        # print(list(self.lc))
+        characters = np.unique(fc)
+        characters.sort()
+        self.characters = characters
+        group0 = {key: np.where(fc == key)[0] for key in characters}
+
+        def my_sort(s, group=None, all_position=None):
+
+            # return local transmation if recursion
+            # if len(s)=len(fl) -> local=global
+
+            if len(s) == 0:
+                pass
+            if len(s) == 1:
+                return [0]
+
+            if len(s) == len(np.unique(s)):
+                if group:
+                    return list(np.argsort(s))
+                else:
+                    return list(all_position[np.argsort(s)])
+
+            transformation = []
+
+            if not group:
+                letters = np.unique(s)
+                letters.sort()
+            else:
+                letters = self.characters
+            for letter in letters:
+                if group:
+                    # fl, has group=group0
+                    position = group[letter]
+                else:
+                    # subseq, has all_position
+                    position = np.array(all_position)[np.where(s == letter)]
+
+                if len(position) < 2:
+                    transformation += list(position)
+                else:
+                    pre_position = position - 1
+                    pre_s = fc[pre_position]
+                    local_transformation = my_sort(pre_s, all_position=pre_position)
+
+                    local_transformation = list(np.array(local_transformation) + 1)
+                    transformation += local_transformation
+
+            return transformation
+
+        transformation = my_sort(fc, group=group0)
+
+        self.po = len(fc) - np.array(transformation)
+        self.lc = lc[transformation]
 
         long = len(self.lc)
         ns = [0] * long
@@ -27,7 +79,6 @@ class BWTstore:
             first[i] = start
             start += counter[i]
 
-        # print(list(map(str, ns)))
         self.ns = ns
         self.first = first
 
@@ -55,4 +106,44 @@ class BWTstore:
 
 # BWTstore("asdfqwer").find("dfqw")
 # BWTstore("asdfqsdagfs").find("dfqsd")
-print(BWTstore("asdfasdf").find("asdf"))
+# print(BWTstore("asdfasdf").find("asdf"))
+
+# DD = generator().generate_DNA(1000)
+# D = generator().generate_DNA(10)
+
+# D = "CCAGTAAGCC"
+# print(BWTstore(D).find(D))
+# print((DD + D)[-10:])
+# print(D)
+
+"""和上面类合并的时候注意一下characters这个的作用域（写的过于乱"""
+
+
+# a = "GCAAAAGT"
+# print(fl(a))
+# print(ag_tra.fl(a))
+# print(ag_tra.arg(a))
+# for i in ag_tra.rong(a):
+#     print(i)
+
+
+# if __name__ == "__main__":
+#     wrong = 0
+#     ee = 0
+#     for i in range(1000):
+#         a = generator.generate_DNA(1000)
+#         # print(a)
+#         # print(fl(a))
+#         # print(ag_tra.fl(a))
+
+#         try:
+#             if BWTstore(a).my_sort(a) != ag_tra.fl(a):
+#                 print(a, fl(a), ag_tra.fl(a))
+#                 wrong += 1
+#         except:
+#             print(a, "   error")
+#             ee += 1
+
+#     print(wrong, ee)
+
+print(BWTstore("ISLHDFGOUWSAR;FH").lc)
