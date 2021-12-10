@@ -1,5 +1,4 @@
 import numpy as np
-from test import timer
 import generator
 
 

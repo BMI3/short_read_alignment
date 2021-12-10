@@ -1,3 +1,4 @@
+from random import seed
 from typing import List
 import numpy as np
 import generator
@@ -63,7 +64,7 @@ class BWTstore:
         self.po = len(fc) - np.array(transformation)
         self.lc = lc[transformation]
 
-        long = len(self.lc)
+        long = len(fc)
         ns = [0] * long
         counter = {}
         first = {}
@@ -74,7 +75,6 @@ class BWTstore:
                 ns[i] = counter[self.lc[i]]
                 counter[self.lc[i]] += 1
         start = 0
-        self.characters = sorted(counter.keys())
         for i in self.characters:
             first[i] = start
             start += counter[i]
@@ -101,49 +101,34 @@ class BWTstore:
         if chara == self.characters[-1]:
             return len(self.lc)
         else:
-            return self.first[self.characters[self.characters.index(chara) + 1]]
+            return self.first[self.characters[list(self.characters).index(chara) + 1]]
+
+    def seeding(self, motif, k):
+        max_match = len(motif) // (k + 1)
+        overlap = min(max(2, int(max_match * 0.2)), max_match - 1)
+        seed_search = []
+        for i in range((len(motif) - overlap) // (max_match - overlap)):
+
+            if i == 0:
+                seed = motif[0:max_match]
+            else:
+                seed = motif[
+                    i * (max_match - overlap) : i * (max_match - overlap) + max_match
+                ]
+            seed_search += self.find(seed)
+        return seed_search, max_match, overlap
 
 
-# BWTstore("asdfqwer").find("dfqw")
-# BWTstore("asdfqsdagfs").find("dfqsd")
 # print(BWTstore("asdfasdf").find("asdf"))
 
-# DD = generator().generate_DNA(1000)
-# D = generator().generate_DNA(10)
-
-# D = "CCAGTAAGCC"
-# print(BWTstore(D).find(D))
-# print((DD + D)[-10:])
-# print(D)
-
-"""和上面类合并的时候注意一下characters这个的作用域（写的过于乱"""
-
-
-# a = "GCAAAAGT"
-# print(fl(a))
-# print(ag_tra.fl(a))
-# print(ag_tra.arg(a))
-# for i in ag_tra.rong(a):
-#     print(i)
-
-
-# if __name__ == "__main__":
-#     wrong = 0
-#     ee = 0
-#     for i in range(1000):
-#         a = generator.generate_DNA(1000)
-#         # print(a)
-#         # print(fl(a))
-#         # print(ag_tra.fl(a))
-
-#         try:
-#             if BWTstore(a).my_sort(a) != ag_tra.fl(a):
-#                 print(a, fl(a), ag_tra.fl(a))
-#                 wrong += 1
-#         except:
-#             print(a, "   error")
-#             ee += 1
-
-#     print(wrong, ee)
-
-print(BWTstore("ISLHDFGOUWSAR;FH").lc)
+if __name__ == "__main__":
+    print(
+        BWTstore(generator.generate_DNA(100000000)).seeding(
+            generator.generate_DNA(80), 10
+        )
+    )
+    # print(
+    #     BWTstore(
+    #         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASSSSSSSSSSSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    #     ).seeding("SSSSS", 1)
+    # )
