@@ -1,6 +1,12 @@
-import ag2
-import ag_tra
-import generator
+try:
+    import ag2
+    import ag_tra
+    import generator
+except ModuleNotFoundError:
+    from pip._internal import main
+
+    main.main(["install", "-r", "requirements.txt"])
+
 
 """decerator"""
 
@@ -31,16 +37,6 @@ def count_info(func):
         print("程序占用了内存" + str(info_end - info_start) + "KB")
 
     return float_info
-
-
-def try_module(function):
-    def wrapper(*args, **kwargs):
-        try:
-            function(*args, **kwargs)
-        except ModuleNotFoundError:
-            from pip._internal import main
-
-            main.main(["install", "-r", "requirements.txt"])
 
 
 # @timer
