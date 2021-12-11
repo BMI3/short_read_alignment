@@ -1,70 +1,57 @@
-try:
-    import ag2
-    import ag_tra
-    import generator
-except ModuleNotFoundError:
-    from pip._internal import main
-
-    main.main(["install", "-r", "requirements.txt"])
-
+import ag2
+import ag_tra
+import generator
 
 """decerator"""
 
 
-def timer(function):
-    import time
+def evalue(function, mode):
+    def timer(*args, **kwargs):
+        import time
 
-    def wrapper_c(*args, **kwargs):
         time0 = time.time()
         result = function(*args, **kwargs)
         time_cost = time.time() - time0
         print("time cost:", time_cost)
         return result
 
-    return wrapper_c
+    def memory(*args, **kwargs):
+        import os
+        import psutil
 
-
-def count_info(func):
-    import os
-    import psutil
-
-    def float_info(*args, **kwargs):
         pid = os.getpid()
         p = psutil.Process(pid)
         info_start = p.memory_full_info().uss / 1024
-        func(*args, **kwargs)
+        result = function(*args, **kwargs)
         info_end = p.memory_full_info().uss / 1024
-        print("程序占用了内存" + str(info_end - info_start) + "KB")
+        print(str(info_end - info_start) + "KB")
+        return result
 
-    return float_info
+    if mode == "t":
+        return timer
+    if mode == "m":
+        return memory
+    return function
 
 
-# @timer
-@count_info
+# @evalue(mode="t")
 def ag2_fl(s):
     print("ag2")
     ag2.BWTstore(s)
 
 
-# @timer
-@count_info
+# @evalue
 def agt(s):
     print("agt")
     ag_tra.fl(s)
 
 
-@try_module
-def test_function():
-    s = generator.generate_DNA(100000)
-    ag2_fl(s)
-    agt(s)
+# def test_function():
+#     s = generator.generate_DNA(1000)
+#     ag2_fl(s)
+#     agt(s)
 
-
-if __name__ == "__main__":
-    test_function()
-
-# if __name__ == "__main__":
-#     wrong = 0
+#         wrong = 0
 #     ee = 0
 #     for i in range(1000):
 #         a = generator.generate_DNA(1000)
@@ -81,3 +68,16 @@ if __name__ == "__main__":
 #             ee += 1
 
 #     print(wrong, ee)
+
+
+if __name__ == "__main__":
+    # test_function()
+    # ag2_fl(generator.generate_DNA(1000))
+
+    s = generator.generate_DNA(1000)
+    ex = generator.extract(s, 100, 2)
+    print(ex)
+    print(ag2.BWTstore(s).find(ex[0][0]))
+    print(ag2.BWTstore(s).find(ex[0][1]))
+    print(ag2.BWTstore(s).seeding(ex[0][0], 0))
+    print(ag2.BWTstore(s).seeding(ex[0][1], 0))

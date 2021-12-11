@@ -82,7 +82,8 @@ class BWTstore:
         self.ns = ns
         self.first = first
 
-    def find(self, motif):
+    def find(self, motif, detect=True):
+
         result = []
         possible = range(self.first[motif[-1]], self.next_first(motif[-1]))
         for i in possible:
@@ -117,6 +118,12 @@ class BWTstore:
                 ]
             seed_search += self.find(seed)
         return seed_search, max_match, overlap
+
+    def detect_bm(self, motif):
+        """
+        detect if the types of the reference and motif are consistent.
+        if DNA & RNA sequence respectively, ask whether convert all 'U' into 'T'
+        """
 
 
 # print(BWTstore("asdfasdf").find("asdf"))
