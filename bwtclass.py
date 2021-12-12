@@ -99,4 +99,37 @@ class BWTtrans:
             return [char_range[next_char][0]+rank_start, char_range[next_char][0]+rank_end+1] # range is left open, right closed
         else:
             return -1
+
+    def querySA(seq, t):
+        ''' Given sequence to be queried and origin string t, performing the BWT,
+        return the position that seq occur in the origin string (-1 for not found)'''
+        sa = suffixArray(t)
+        bwt = bwaBySa(t, sa)
+        saindex = [i[1] for i in suffixArray(t)]
+        # get the F col
+        Fcol = sorted(bwt)
+        # get the rank
+        total, ranks = trank(bwt)
+        # get the start and end pos of each char
+        char_range = charRange(total) 
+        # get the tally for all chars
+        all_tally = generateTally(bwt)
+        
+        # start from the last char in seq
+        first_char = seq[-1]
+        # check whether char in the ref string first
+        if first_char not in total:
+            return -1
+        # the range of the first char can be found in char_range
+        cc_range = [char_range[first_char][0], char_range[first_char][1]]
+        # length of seq is 1 (uncommon case)
+        if len(seq) == 1:
+            return saindex[cc_range[0]:cc_range[1]]
+        # for the remaining char in seq
+        for i in range(len(seq)-2,-1,-1):
+            cc_range = findNextWithTally(cc_range, seq[i], all_tally, char_range)
+            #print(seq[i],cc_range)
+            if cc_range == -1:
+                return -1 
+        return saindex[cc_range[0]:cc_range[1]]
     
