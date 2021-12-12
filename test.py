@@ -1,5 +1,4 @@
 import time
-from typing import _T_co
 import matplotlib.pyplot as plt
 import logging
 import ag2
@@ -54,7 +53,7 @@ def agt(s):
 def test_function():
     time_cost = []
     try:
-        for i in range(2, 7):
+        for i in range(2, 5):
             print(i)
             s = generator.generate_DNA(10 ** i)
             time0 = time.time()
@@ -66,9 +65,16 @@ def test_function():
             print(time1 - time0, time2 - time1)
     except MemoryError:
         print("memoryError at i=", i)
-    p0, p1 = plt.subplot
-    p0.plot(range(2, 6), [time_cost[i][0] for i in len(range(time_cost))])
-    p1.plot(range(2, 6), [time_cost[i][1] for i in len(range(time_cost))])
+    # fig, ax = plt.subplots(1, 2)
+    # ax[0].plot(range(2, 5), [time_cost[i][0] for i in range(len(time_cost))])
+    # ax[1].plot(range(2, 5), [time_cost[i][1] for i in range(len(time_cost))])
+    nn = len(time_cost)
+    plt.plot(
+        range(2, 2 + nn),
+        [time_cost[i][0] for i in range(nn)],
+        range(2, 2 + nn),
+        [time_cost[i][1] for i in range(nn)],
+    )
     plt.show()
 
 
