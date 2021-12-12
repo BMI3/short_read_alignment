@@ -11,8 +11,9 @@ class BWTtrans:
         self.sa = self.suffixArray(self.ref)
         self.bwt = self.bwaBySa(self.ref,self.sa)
         self.total, self.ranks = self.trank()
-        self.char_range = self.charRange(self.total)
+        self.char_range = self.charRange()
         self.all_tally = self.generateTally()
+        #self.pos = self.querySA()
 
 
     def suffixArray(self, t):
@@ -49,10 +50,11 @@ class BWTtrans:
             total[i] += 1
         return total, ranks
 
-    def charRange(total):
+    def charRange(self):
         '''Given total: a dict with chars(nucleotide) as keys and its total occurences as values,
         return the postion of each char in the F column (i.e. sorted bwt) in which range it occurs (a range
         with right closed, left open)'''
+        total = self.total
         char_range = dict()
         pos = 0
         for char, count in sorted(total.items()):
@@ -60,7 +62,7 @@ class BWTtrans:
             pos += count
         return char_range
 
-    def findFPos(Lpos,char,ranks,start_pos):
+    def findFPos(self,Lpos,char,ranks,start_pos):
         '''Given the pos in the L col (Lpos) and char, with ranks from trank() and start_pos
         from startPos(), return a list next_pos which is the pos in the F col that matches
         the char in the L col(like traceback)'''
@@ -70,7 +72,7 @@ class BWTtrans:
             next_pos.append(ranks[p]+start_pos[char])
         return next_pos
 
-    def generateTally():
+    def generateTally(self):
         ''' Burrow-Wheeler transformed string, return a dict called all_char_tally,
         key: char, value: its count from start to end (a list)'''
         bwt = self.bwt
@@ -86,7 +88,7 @@ class BWTtrans:
                 all_char_tally[c].append(tally[c])
         return all_char_tally
 
-    def findNextWithTally(current_range, next_char,tally,char_range):
+    def findNextWithTally(self,current_range, next_char,tally,char_range):
         '''Given the current range (left closed, right open) in the F col and the next char searching for, with the help of tally and char_range,
         return the rank of the next char satified (-1 for not found)'''
         start = current_range[0] - 1 # need to see on before so that we do not leave out the first char
@@ -100,20 +102,20 @@ class BWTtrans:
         else:
             return -1
 
-    def querySA(seq, t):
+    def querySA(self,seq):
         ''' Given sequence to be queried and origin string t, performing the BWT,
         return the position that seq occur in the origin string (-1 for not found)'''
-        sa = suffixArray(t)
-        bwt = bwaBySa(t, sa)
-        saindex = [i[1] for i in suffixArray(t)]
+        sa = self.sa
+        bwt = self.bwt
+        saindex = [i[1] for i in sa]
         # get the F col
         Fcol = sorted(bwt)
         # get the rank
-        total, ranks = trank(bwt)
+        total, ranks = self.total, self.ranks
         # get the start and end pos of each char
-        char_range = charRange(total) 
+        char_range = self.char_range 
         # get the tally for all chars
-        all_tally = generateTally(bwt)
+        all_tally = self.all_tally
         
         # start from the last char in seq
         first_char = seq[-1]
@@ -127,7 +129,7 @@ class BWTtrans:
             return saindex[cc_range[0]:cc_range[1]]
         # for the remaining char in seq
         for i in range(len(seq)-2,-1,-1):
-            cc_range = findNextWithTally(cc_range, seq[i], all_tally, char_range)
+            cc_range = self.findNextWithTally(cc_range, seq[i], all_tally, char_range)
             #print(seq[i],cc_range)
             if cc_range == -1:
                 return -1 
