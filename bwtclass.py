@@ -4,10 +4,9 @@ class BWTtrans:
 
     '''Manage Burrow-Wheeler transform, query'''
 
-    def __init__(self, ref, seq) -> None:
+    def __init__(self, ref) -> None:
         '''create bwt string'''
         self.ref = ref
-        self.seq = seq
         self.sa = self.suffixArray(self.ref)
         self.bwt = self.bwaBySa(self.ref,self.sa)
         self.total, self.ranks = self.trank()
