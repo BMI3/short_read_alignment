@@ -111,7 +111,9 @@ def graph_generate_LC(iter, data, show=False, mode="t", logs=True):
     if show:
         plt.show()
     else:
-        plt.savefig(mode + ":" + str(iter) + ".png")
+        fn = mode + str(iter[0]) + ".png"
+        print("save as", fn)
+        plt.savefig(fn)
 
 
 def test_generate_LC():
