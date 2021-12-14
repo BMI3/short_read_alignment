@@ -1,5 +1,6 @@
 from MyBWT import MyBWT
 import pickle
+import sys
 
 
 def readGenome(filename):
@@ -19,6 +20,9 @@ def reLoadRefObj(filename):
         my_gonome = pickle.load(f, encoding="UTF-8")
 
     print("debug here to check the object")
+
+    print(sys.getsizeof(my_gonome.lc))
+    print(sys.getsizeof("".join(my_gonome.lc)))
 
 
 # readGenome("./data/phix.fa")

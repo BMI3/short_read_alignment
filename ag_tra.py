@@ -5,7 +5,7 @@ import generator
 def rong(s):
     s += "$"
     result = list(map(lambda i: s[-1 - i :] + s[: -1 - i], range(len(s))))
-    # print("rong", result)
+    print("rong", result)
     return result
 
 
@@ -26,5 +26,7 @@ def arg(s):
 
 
 if __name__ == "__main__":
-    c = "asdf"
-    print(arg(c))
+    c = "ACGATATG"
+    r = rong(c)
+    for i in range(len(r)):
+        print(i, r[i])
