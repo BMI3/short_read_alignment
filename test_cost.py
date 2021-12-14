@@ -1,62 +1,47 @@
 import time
 import os
-
-# from numpy as np
 import psutil
+import numpy as np
 import matplotlib.pyplot as plt
 from MyBWT import MyBWT
 import generator
 
 
-def cost_generate_LC(iter, show=False, mode="t"):
-    cost = []
-    for i in iter:
-        print(i)
-        s = generator.generate_DNA(i)
-        if mode == "t":
-            time0 = time.time()
-            MyBWT().generateLC(MyBWT(s))
-            time1 = time.time()
-            ag_tra.fl(s)
-            time2 = time.time()
-            c = (time1 - time0, time2 - time1)
-        else:
+def evalue(mode="t"):
+    def timer(f):
+        def wrapper(*args, **kwargs):
+            t0 = time.time()
+            f(*args, **kwargs)
+            t1 = time.time()
+            return t1 - t0
+
+        return wrapper
+
+    def memory(f):
+        def wrapper(*args, **kwargs):
             pid = os.getpid()
             p = psutil.Process(pid)
-            memory0 = p.memory_full_info().uss / 1024
-            ag2.BWTstore(s)
-            memory1 = p.memory_full_info().uss / 1024
-            ag_tra.fl(s)
-            memory2 = p.memory_full_info().uss / 1024
-            c = (memory1 - memory0, memory2 - memory1)
-        cost.append(c)
-        print(c)
-    nn = len(cost)
-    plt.xscale("log")
-    plt.plot(
-        iter,
-        [cost[i][0] for i in range(nn)],
-        iter,
-        [cost[i][1] for i in range(nn)],
-    )
-    if show:
-        plt.show()
+            m0 = p.memory_full_info().uss / 1024
+            f(*args, **kwargs)
+            m1 = p.memory_full_info().uss / 1024
+            return m1 - m0
+
+        return wrapper
+
+    if mode == "t":
+        return timer
     else:
-        plt.savefig(str(iter) + ".png")
+        return memory
 
 
-def test_generate_LC():
-    """
-    compare our algorithm with
-        1. generate with the whole rotation matrix
-        2. generate with a suffix tree
-    """
-
+def cost_generate_LC(iter, show=False, mode="t"):
+    @evalue(mode)
     def generate_LC_matrix(s):
         s += "$"
         result = list(map(lambda i: s[-1 - i :] + s[: -1 - i], range(len(s))))
         return "".join([x[-1] for x in sorted(s)])
 
+    @evalue(mode)
     def generate_LC_SA(s):
         s += "$"
         sa = []
@@ -70,13 +55,63 @@ def test_generate_LC():
                 lc += s[i[1] - 1]
         return lc
 
-    logs = [10 ** i for i in range(2, 5)]
-    ag2_vs_agt(logs, mode="m")
+    @evalue(mode)
+    def generate_LC(s):
+        MyBWT.generateLC(MyBWT(""), s)
 
-    ag2_vs_agt(range(10 ** 4, 7 * 10 ** 4, 10 ** 4))
-    ag2_vs_agt(range(10 ** 4, 2 * 10 ** 4, 10 ** 3))
-    ag2_vs_agt(range(16 * 10 ** 3, 17 * 10 ** 3, 10 ** 2))
-    ag2_vs_agt(range(163 * 10 ** 2, 164 * 10 ** 2, 10))
+    matrix = []
+    SA = []
+    my = []
+    for i in iter:
+        print(i)
+        s = generator.generate_DNA(i)
+        matrix.append(generate_LC_matrix(s))
+        SA.append(generate_LC_SA(s))
+        my.append(generate_LC(s))
+
+    print(matrix, SA, my)
+
+    x = np.arange(len(iter))
+    width = 0.3
+
+    fig, ax = plt.subplots()
+    ax.set_yscale("log")
+    ax1 = ax.bar(x - width, matrix, width, label="matrix", color="#F7D6AA")
+    ax2 = ax.bar(x, SA, width, label="SA", color="#4D454D")
+    ax3 = ax.bar(x + width, my, width, label="my", color="#C95B45")
+
+    ax.set_ylabel("time cost/s")
+    ax.set_title("time cost of 3 method to generate the BWT last column")
+    ax.set_xticks(x, iter)
+    ax.legend()
+
+    ax.bar_label(ax1, padding=3)
+    ax.bar_label(ax2, padding=3)
+    ax.bar_label(ax3, padding=3)
+
+    fig.tight_layout()
+    if show:
+        plt.show()
+    else:
+        plt.savefig(str(iter) + ".png")
+
+
+def test_generate_LC():
+    """
+    compare our algorithm with
+        1. generate with the whole rotation matrix
+        2. generate with a suffix tree
+    """
+
+    logs = [10 ** i for i in range(2, 5)]
+    cost_generate_LC(logs, mode="m", show=True)
+
+    cost_generate_LC(range(10 ** 4, 7 * 10 ** 4, 10 ** 4), mode="t", show=True)
+
+    # ag2_vs_agt(range(10 ** 4, 7 * 10 ** 4, 10 ** 4))
+    # ag2_vs_agt(range(10 ** 4, 2 * 10 ** 4, 10 ** 3))
+    # ag2_vs_agt(range(16 * 10 ** 3, 17 * 10 ** 3, 10 ** 2))
+    # ag2_vs_agt(range(163 * 10 ** 2, 164 * 10 ** 2, 10))
 
 
 # def find_vs_query(obj, motif):
