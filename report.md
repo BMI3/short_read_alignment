@@ -12,6 +12,13 @@ With the fast developing DNA sequencing technologies, the amount DNA sequencing 
 
 We simulated the genome and its corresponding short read sequencing data using the Mason program to test our software. The overall quality of reads is xxx. The benefit of using simulated data is that we know the exact coordinate of every read generated, so we can calculate the accuracy of the alignment.
 
-- 需要一张图，反应accuracy
+- 需要一张图，反映accuracy（？）
 
-To show the optimization of memory and speed, we compare the space and time usage during performing BWT of space saving way used in our software with the traditional way (by building suffix array). Fig x shows that the performance of our software is not better than the traditional way when the length of sequencing is lower than xxx, but it greatly outperforms when the length increases greater. 
+To show the optimization of memory and speed, we compare the space and time usage during performing BWT of space saving way used in our software with the traditional way (by building suffix array). Fig x shows that the performance of our software is not better than the traditional way when the length of sequencing is lower than xxx, but it greatly outperforms when the length increases greater. We also test the speed of query either with or without tally and Fig x shows that the speed deed increases and the saving-time increase while increasing the reference genome length.
+
+- 需要两张图，一张比较构建bwt的string的速率图，一张比较query的速率图
+
+# discussion
+
+Given the results above, we can conclude that our software is able to do a job when aligning short reads sequences to the long reference genome. One of the advantage of our software is saving space by its implementation of BWT. Compared to suffix trees, BWT only store the last column of a sorted matrix of all possible rotations of an original string and its corresponding index **(both up to the length of the original string)**. Moreover, we also optimize the way to construct BWT.  In the traditional, BWT was constructed by rotation and sorting, and this process will generate a matrix with O(n2) space. Our novel algorithm avoid this problem by using only necessary reads required to sort instead of generating a large matrix (details described in the algorithm part).  However, though we improve the way to perform BWT, the length of reference genome is still limited. This is understandable as the length of genome increases, the working memory our innovative method needs to generate is also increases, though using much lower memory than that traditional way uses. A potential idea to solve lies in reducing working memory by an algorithm proposed by Hon et al. (2007). It was a space and time efficient algorithm used to generate compressed suffix array, which can be then used to generate FM index. It has been reported that less than 1 GB memory at most was used to construct BWT of human genome (Hon et al., 2007). 
+
