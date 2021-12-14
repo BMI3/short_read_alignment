@@ -34,9 +34,9 @@ def evalue(mode="t"):
         return memory
 
 
-def cost_generate_LC(iter, show=False, mode="t"):
+def cost_generate_LC(iter, mode="t"):
     @evalue(mode)
-    def generate_LC_matrix(s):
+    def generate_LC_rotation(s):
         s += "$"
         result = list(map(lambda i: s[-1 - i :] + s[: -1 - i], range(len(s))))
         return "".join([x[-1] for x in sorted(s)])
@@ -59,41 +59,59 @@ def cost_generate_LC(iter, show=False, mode="t"):
     def generate_LC(s):
         MyBWT.generateLC(MyBWT(""), s)
 
-    matrix = []
+    rotation = []
     SA = []
     my = []
     for i in iter:
         print(i)
         s = generator.generate_DNA(i)
-        matrix.append(generate_LC_matrix(s))
+        rotation.append(generate_LC_rotation(s))
         SA.append(generate_LC_SA(s))
         my.append(generate_LC(s))
 
-    print(matrix, SA, my)
+    return rotation, SA, my
 
-    x = np.arange(len(iter))
-    width = 0.3
 
+def graph_generate_LC(iter, data, show=False, mode="t", logs=True):
     fig, ax = plt.subplots()
-    ax.set_yscale("log")
-    ax1 = ax.bar(x - width, matrix, width, label="matrix", color="#F7D6AA")
-    ax2 = ax.bar(x, SA, width, label="SA", color="#4D454D")
-    ax3 = ax.bar(x + width, my, width, label="my", color="#C95B45")
 
-    ax.set_ylabel("time cost/s")
-    ax.set_title("time cost of 3 method to generate the BWT last column")
-    ax.set_xticks(x, iter)
+    if logs:
+        x = np.arange(len(iter))
+        width = 0.3
+        ax.set_yscale("log")
+        ax1 = ax.bar(x - width, data[0], width, label="rotation", color="#F7D6AA")
+        ax2 = ax.bar(x + 1 - 1, data[1], width, label="SA", color="#4D454D")
+        ax3 = ax.bar(x + width, data[2], width, label="my", color="#C95B45")
+        ax.set_xticks(x, iter)
+    else:
+
+        print(data[1])
+        # ax1 = ax.plot(iter, data[0], label="rotation", color="#F7D6AA")
+        ax2 = ax.plot(iter, data[1], label="SA", color="#4D454D")
+        ax3 = ax.plot(iter, data[2], label="my", color="#C95B45")
+
+    ax.set_xlabel("length of reference sequence")
+    if mode == "t":
+        ax.set(
+            ylabel="time cost/s",
+            title="time cost of methods to construct BWT",
+        )
+    else:
+        ax.set(
+            ylabel="memory cost/KB",
+            title="memory cost of methods to construct BWT",
+        )
+
     ax.legend()
 
-    ax.bar_label(ax1, padding=3)
-    ax.bar_label(ax2, padding=3)
-    ax.bar_label(ax3, padding=3)
+    # ax.bar_label(ax1, padding=3)
+    # ax.bar_label(ax2, padding=3)
+    # ax.bar_label(ax3, padding=3)
 
-    fig.tight_layout()
     if show:
         plt.show()
     else:
-        plt.savefig(str(iter) + ".png")
+        plt.savefig(mode + ":" + str(iter) + ".png")
 
 
 def test_generate_LC():
@@ -103,15 +121,23 @@ def test_generate_LC():
         2. generate with a suffix tree
     """
 
-    logs = [10 ** i for i in range(2, 5)]
-    cost_generate_LC(logs, mode="m", show=True)
+    logs = [10 ** i for i in range(2, 8)]
+    time_logs = cost_generate_LC(logs, mode="t")
+    graph_generate_LC(logs, time_logs, mode="t")
+    memory_logs = cost_generate_LC(logs, mode="m")
+    graph_generate_LC(logs, memory_logs, mode="m")
 
-    cost_generate_LC(range(10 ** 4, 7 * 10 ** 4, 10 ** 4), mode="t", show=True)
+    def repeat(gradient, n):
+        for i in range(n):
+            if i == 0:
+                result = np.array(cost_generate_LC(gradient, mode="t"))
+            else:
+                result += np.array(cost_generate_LC(gradient, mode="t"))
+        return result / n
 
-    # ag2_vs_agt(range(10 ** 4, 7 * 10 ** 4, 10 ** 4))
-    # ag2_vs_agt(range(10 ** 4, 2 * 10 ** 4, 10 ** 3))
-    # ag2_vs_agt(range(16 * 10 ** 3, 17 * 10 ** 3, 10 ** 2))
-    # ag2_vs_agt(range(163 * 10 ** 2, 164 * 10 ** 2, 10))
+    gradient = range(6 * 10 ** 4, 7 * 10 ** 4, 5 * 10 ** 2)
+    time_gradient = repeat(gradient, 5)
+    graph_generate_LC(gradient, time_gradient, mode="t", logs=False)
 
 
 # def find_vs_query(obj, motif):

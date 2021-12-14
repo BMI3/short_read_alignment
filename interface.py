@@ -3,8 +3,14 @@ import pickle
 import sys
 import argparse
 
+fa_set = {"fa", "fasta"}
+fq_set = {"fq", "fastq"}
+
 
 def readGenome(filename):
+    """
+    read fa file
+    """
     genome = ""
     with open(filename, "r") as f:
         for line in f:
@@ -49,22 +55,23 @@ parser.add_argument(
 parser.add_argument(
     "-s",
     "--shortRead",
-    help="input reference genome (.fa or .fa.bwt)",
+    help="input sequncing reads (.fq)",
 )
 
 if __name__ == "__main__":
     args = parser.parse_args()
+    fns = args.reference.split(".")
     if args.build:
-        print("start")
-        readGenome(args.reference)
-        print("finished")
+        if fns[-1] in fa_set:
+            print("start")
+            readGenome(args.reference)
+            print("finished")
+        else:
+            print("input file should be fasta file")
     elif args.query and args.shortRead:
-        if (
-            args.reference.split(".")[-1] == "bwt"
-            and args.reference.split(".")[-2] == "fa"
-        ):
+        if fns[-1] == "bwt" and fns[-2] in fa_set:
             genome = reLoadRefObj(args.reference)
-        elif args.reference.split(".")[-1] == "fa":
+        elif fns[-1] in fa_set:
             genome = readGenome(args.reference)
         else:
             print("unrecognized genome file")

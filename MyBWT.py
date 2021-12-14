@@ -149,7 +149,7 @@ class MyBWT:
         else:
             return -1
 
-    def seeding(self, shortRead, k):
+    def seeding(self, shortRead, k=2):
         max_match = len(shortRead) // (k + 1)
         overlap = min(max(2, int(max_match * 0.2)), max_match - 1)
         seed_search = []
