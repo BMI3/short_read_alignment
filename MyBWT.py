@@ -7,6 +7,7 @@ class MyBWT:
         self.characters, self.po, self.lc = self.generateLC(ref)
         self.tally = self.generateTally()
         self.char_range = self.charRange()
+        self.origin = ref
 
     def generateLC(self, ref):
 
@@ -83,16 +84,16 @@ class MyBWT:
         return all_char_tally
 
     def charRange(self):
-        """Given total: a dict with chars(nucleotide) as keys and its total occurences as values,
+        """
+        Given total: a dict with chars(nucleotide) as keys and its total occurences as values,
         return the postion of each char in the F column (i.e. sorted bwt) in which range it occurs (a range
-        with right closed, left open)"""
-
-        total = {key: value[-1] for key, value in self.tally.items()}
-        char_range = dict()
+        with right closed, left open)
+        """
+        char_range = {}
         pos = 0
-        for char, count in sorted(total.items()):
-            char_range[char] = (pos, pos + count)
-            pos += count
+        for char, list in sorted(self.tally.items()):
+            char_range[char] = (pos, pos + list[-1])
+            pos += list[-1]
         return char_range
 
     def query(self, shortRead):
@@ -100,8 +101,6 @@ class MyBWT:
         Given sequence to be queried and origin string t, performing the BWT,
         return the position that seq occur in the origin string (-1 for not found)
         """
-        # get the F col
-        fc = sorted(self.lc)
         # get the start and end pos of each char
         char_range = self.char_range
 
@@ -109,19 +108,18 @@ class MyBWT:
         first_char = shortRead[-1]
         # check whether char in the ref string first
         if first_char not in self.characters:
-            return -1
+            return np.array([])
         # the range of the first char can be found in char_range
         cc_range = [char_range[first_char][0], char_range[first_char][1]]
-        # length of seq is 1 (uncommon case)
-        if len(shortRead) == 1:
-            return self.po[cc_range[0] : cc_range[1]]
+
         # for the remaining char in seq
         for i in range(len(shortRead) - 2, -1, -1):
             cc_range = self.findNextWithTally(cc_range, shortRead[i], char_range)
             # print(seq[i],cc_range)
-            if cc_range == -1:
-                return -1
+            if cc_range == []:
+                return np.array([])
         return self.po[cc_range[0] : cc_range[1]]
+        # return [self.po[rownum] for rownum in range(cc_range[0], cc_range[1])]
 
     def findNextWithTally(self, current_range, next_char, char_range):
         """
@@ -133,33 +131,79 @@ class MyBWT:
 
         start = current_range[0] - 1
         # need to see on before so that we do not leave out the first char
-        end = current_range[1] - 1
+        end = min(current_range[1] - 1, self.lc.size - 12)
         # right open
 
         if next_char not in tally:
-            return -1
+            return []
         num_char_found = tally[next_char][end] - tally[next_char][start]
         # how many next char found
         if num_char_found > 0:
-            rank_start, rank_end = tally[next_char][start], tally[next_char][end] - 1
-            return [
+            # rank_start, rank_end = tally[next_char][start], tally[next_char][end] - 1
+            rank_start, rank_end = tally[next_char][start], tally[next_char][end]
+            return (
                 char_range[next_char][0] + rank_start,
                 char_range[next_char][0] + rank_end + 1,
-            ]  # range is left open, right closed
+            )  # range is left open, right closed
         else:
-            return -1
+            return []
 
     def seeding(self, shortRead, k=2):
+        """ """
         max_match = len(shortRead) // (k + 1)
         overlap = min(max(2, int(max_match * 0.2)), max_match - 1)
         seed_search = []
-        for i in range((len(shortRead) - overlap) // (max_match - overlap)):
+        n_seed = (len(shortRead) - overlap) // (max_match - overlap)
+        for i in range(n_seed):
 
-            if i == 0:
-                seed = shortRead[0:max_match]
+            seed = shortRead[
+                i * (max_match - overlap) : i * (max_match - overlap) + max_match
+            ]
+            result = self.query(seed)
+            if result.size > 0:
+                seed_search += list(result - i * (max_match - overlap))
+
+        if not seed_search:
+            return seed_search
+
+        possible = []
+        freq = []
+        for p in seed_search:
+            if p not in possible:
+                possible.append(p)
+                freq.append(1)
             else:
-                seed = shortRead[
-                    i * (max_match - overlap) : i * (max_match - overlap) + max_match
-                ]
-            seed_search += self.query(seed)
-        return seed_search, max_match, overlap
+                freq[possible.index(p)] += 1
+        print(possible)
+        print(freq)
+        if max(freq) == n_seed:
+            position = possible[freq.index(max(freq))]
+            print(position)
+            self.extend(shortRead, position)
+            return position
+        else:
+            return possible
+
+    # def traceback(self):
+    #     """
+    #     Given Burrows-Wheeler tranformed string bwt, return
+    #     the origin sequence
+    #     """
+    #     rownum = 0
+    #     seq = self.lc[0]
+
+    #     for i in range(self.lc.size - 1):
+    #         letter = self.lc[rownum]  # record the focus character in the last column
+    #         rank = self.tally[letter][rownum]
+    #         rownum = self.char_range[letter][0] + rank - 1
+    #         seq = letter + seq
+    #     self.origin = seq
+
+    def extend(self, shortRead, position):
+        """ """
+        position -= 1
+        last_rownum = np.where(self.po == position + len(shortRead))[0][0]
+        print(last_rownum)
+        # if self.origin == None:
+        #     self.traceback()
+        print("origin:", self.origin[position : position + len(shortRead)] == shortRead)
