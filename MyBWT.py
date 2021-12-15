@@ -1,3 +1,4 @@
+from os import error
 import numpy as np
 
 
@@ -115,7 +116,6 @@ class MyBWT:
         # for the remaining char in seq
         for i in range(len(shortRead) - 2, -1, -1):
             cc_range = self.findNextWithTally(cc_range, shortRead[i], char_range)
-            # print(seq[i],cc_range)
             if cc_range == []:
                 return np.array([])
         return self.po[cc_range[0] : cc_range[1]]
@@ -153,11 +153,17 @@ class MyBWT:
         max_match = len(shortRead) // (k + 1)
         overlap = min(max(2, int(max_match * 0.2)), max_match - 1)
         seed_search = []
-        n_seed = (len(shortRead) - overlap) // (max_match - overlap)
+        n_seed = (len(shortRead) - overlap) // (max_match - overlap) + 1
         for i in range(n_seed):
-
+            print(
+                i * (max_match - overlap),
+                max(i * (max_match - overlap) + max_match, len(shortRead) + 1),
+            )
             seed = shortRead[
-                i * (max_match - overlap) : i * (max_match - overlap) + max_match
+                i
+                * (max_match - overlap) : max(
+                    i * (max_match - overlap) + max_match, len(shortRead) + 1
+                )
             ]
             result = self.query(seed)
             if result.size > 0:
@@ -174,12 +180,15 @@ class MyBWT:
                 freq.append(1)
             else:
                 freq[possible.index(p)] += 1
-        print(possible)
-        print(freq)
+        print("possible", possible)
+        print("freq:", freq)
         if max(freq) == n_seed:
-            position = possible[freq.index(max(freq))]
-            print(position)
+            position = [possible[i] for i in range(len(freq)) if freq[i] == max(freq)]
+            if 680580 in position:
+                raise error
+
             self.extend(shortRead, position)
+
             return position
         else:
             return possible
@@ -201,9 +210,19 @@ class MyBWT:
 
     def extend(self, shortRead, position):
         """ """
-        position -= 1
-        last_rownum = np.where(self.po == position + len(shortRead))[0][0]
-        print(last_rownum)
-        # if self.origin == None:
-        #     self.traceback()
-        print("origin:", self.origin[position : position + len(shortRead)] == shortRead)
+        for p in position:
+
+            p -= 1
+            # if self.origin == None:
+            #     self.traceback()
+            yes = self.origin[p : p + len(shortRead)] == shortRead
+            print("=origin?", yes)
+            if not yes:
+
+                print(self.origin[p : p + 88] == shortRead[:88])
+                print("0123456789")
+                print(self.origin[p + 80 : p + 100])
+                print(shortRead[80:])
+                print(len(shortRead))
+                raise error
+            return position

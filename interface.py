@@ -1,9 +1,9 @@
 from MyBWT import MyBWT
 import pickle
-import sys
 import time
 import argparse
-from Bio.SeqIO.QualityIO import FastqGeneralIterator
+
+# from Bio.SeqIO.QualityIO import FastqGeneralIterator
 from Bio import SeqIO
 
 fa_set = {"fa", "fasta"}
@@ -54,6 +54,12 @@ parser.add_argument(
     help="align short reads to the genome",
 )
 parser.add_argument(
+    "-p",
+    "--pairend",
+    action="store_true",
+    help="if the sequencing data is pair-end",
+)
+parser.add_argument(
     "-r",
     "--reference",
     required=True,
@@ -83,24 +89,25 @@ if __name__ == "__main__":
         else:
             print("unrecognized genome file")
 
-        with open(args.shortRead) as in_handle:
-            for title, seq, qual in FastqGeneralIterator(in_handle):
-                genome.seeding(seq)
+        # with open(args.shortRead) as in_handle:
+        #     for title, seq, qual in FastqGeneralIterator(in_handle):
+        #         genome.seeding(seq)
 
-    # genome = reLoadRefObj("simulated_1m.fa.bwt")
-    # genome = readGenome("./data/simulated_1m.fa")
-    # records = list(SeqIO.parse("pairend_read1_with_virants.fq", "fastq"))
-    # records = list(SeqIO.parse("pairend_read1_with_virants.fq", "fastq"))
-    # print(len(records))
-    # no = 0
-    # for i, record in enumerate(records):
-    #     print(i, record.name, no)
-    #     # result = genome.seeding(record.seq) + genome.seeding(
-    #     #     record.reverse_complement().seq
-    #     # )
-    #     result = genome.seeding(record.seq)
-    #     if result == []:
-    #         no += 1
-    #     print(result)
-    #     print("----------------------")
-    # print(no, "/", len(records))
+        fns = args.shortRead.split(".")[-1]
+        if fns in fa_set:
+            suffix = "fasta"
+        if fns in fq_set:
+            suffix = "fastq"
+        records = list(SeqIO.parse(args.shortRead, suffix))
+        print(len(records))
+        no = 0
+        for i, record in enumerate(records):
+            print(record.name)
+            result = genome.seeding(record.seq)
+            if args.pairend:
+                result += genome.seeding(record.reverse_complement().seq)
+            if result == []:
+                no += 1
+            print("result:", result)
+            print("----------------------")
+        print(no, "/", len(records))

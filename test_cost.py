@@ -65,13 +65,13 @@ def cost_generate_LC(iter, mode="t", logs=True):
     for i in iter:
         print(i)
         s = test_generator.generate_DNA(i)
-        if logs:
+        if logs and mode == "t":
             rotation.append(generate_LC_rotation(s))
 
         SA.append(generate_LC_SA(s))
         my.append(generate_LC(s))
 
-    return rotation, SA, my
+    return SA, my, rotation
 
 
 def graph_generate_LC(iter, data, show=False, mode="t", logs=True):
@@ -81,9 +81,10 @@ def graph_generate_LC(iter, data, show=False, mode="t", logs=True):
         x = np.arange(len(iter))
         width = 0.3
         ax.set_yscale("log")
-        ax1 = ax.bar(x - width, data[0], width, label="rotation", color="#F7D6AA")
-        ax2 = ax.bar(x + 1 - 1, data[1], width, label="SA", color="#4D454D")
-        ax3 = ax.bar(x + width, data[2], width, label="my", color="#C95B45")
+        if mode == "t":
+            ax1 = ax.bar(x - width, data[2], width, label="rotation", color="#F7D6AA")
+        ax2 = ax.bar(x + 1 - 1, data[0], width, label="SA", color="#4D454D")
+        ax3 = ax.bar(x + width, data[1], width, label="my", color="#C95B45")
         ax.set_xticks(x)
         ax.set_xticklabels(iter)
     else:
@@ -123,18 +124,18 @@ def test_generate_LC():
         2. generate with a suffix tree
     """
 
-    logs = [10 ** i for i in range(2, 8)]
+    logs = [10 ** i for i in range(2, 7)]
     time_logs = cost_generate_LC(logs, mode="t")
     graph_generate_LC(logs, time_logs, mode="t")
-    memory_logs = cost_generate_LC(logs, mode="m")
+    memory_logs = cost_generate_LC(logs, mode="m")[:2]
     graph_generate_LC(logs, memory_logs, mode="m")
 
     def repeat(gradient, n):
         for i in range(n):
             if i == 0:
-                result = np.array(cost_generate_LC(gradient, mode="t", logs=False)[1:])
+                result = np.array(cost_generate_LC(gradient, mode="t", logs=False)[:2])
             else:
-                result += np.array(cost_generate_LC(gradient, mode="t", logs=False)[1:])
+                result += np.array(cost_generate_LC(gradient, mode="t", logs=False)[:2])
         return result / n
 
     gradient = range(6 * 10 ** 4, 7 * 10 ** 4, 5 * 10 ** 2)
