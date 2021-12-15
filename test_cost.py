@@ -65,8 +65,8 @@ def cost_generate_LC(iter, mode="t", logs=True):
     for i in iter:
         print(i)
         s = test_generator.generate_DNA(i)
-        if logs and mode == "t":
-            rotation.append(generate_LC_rotation(s))
+        # if logs and mode == "t":
+        #     rotation.append(generate_LC_rotation(s))
 
         SA.append(generate_LC_SA(s))
         my.append(generate_LC(s))
