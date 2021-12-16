@@ -23,7 +23,8 @@ def readGenome(filename):
     #         if not line[0] == ">":
     #             genome += line.rstrip()
     # my_gonome = MyBWT(genome)
-    my_gonome = MyBWT(str(next(SeqIO.parse(filename, "fasta")).seq))
+    genome = next(SeqIO.parse(filename, "fasta"))
+    my_gonome = MyBWT(genome.id, str(genome.seq))
     with open(filename + ".bwt", "wb") as f:
         pickle.dump(my_gonome, f, 0)
     print("finish buiding the genome index, cost", time.time() - time0, "s")
@@ -70,6 +71,11 @@ parser.add_argument(
     "--shortRead",
     help="input sequncing reads (.fq)",
 )
+parser.add_argument(
+    "-o",
+    "--output",
+    help="define the output",
+)
 
 if __name__ == "__main__":
     args = parser.parse_args()
@@ -83,9 +89,9 @@ if __name__ == "__main__":
             print("input should be fasta file")
     elif args.query and args.shortRead:
         if fns[-1] == "bwt":
-            genome = reLoadRefObj(args.reference)
+            my_genome = reLoadRefObj(args.reference)
         elif fns[-1] in fa_set:
-            genome = readGenome(args.reference)
+            my_genome = readGenome(args.reference)
         else:
             print("unrecognized genome file")
 
@@ -99,15 +105,31 @@ if __name__ == "__main__":
         if fns in fq_set:
             suffix = "fastq"
         records = list(SeqIO.parse(args.shortRead, suffix))
-        print(len(records))
-        no = 0
-        for i, record in enumerate(records):
-            print(record.name)
-            result = genome.seeding(record.seq)
-            if args.pairend:
-                result += genome.seeding(record.reverse_complement().seq)
-            if result == []:
-                no += 1
-            print("result:", result)
-            print("----------------------")
+        with open("output.bed", mode="w") as f:
+            print(len(records))
+            no = 0
+            for i, record in enumerate(records):
+                print(record.name)
+
+                result = my_genome.seeding(record.seq)
+                if args.pairend:
+                    result += my_genome.seeding(record.reverse_complement().seq)
+                if result == []:
+                    no += 1
+                else:
+                    for res in result:
+                        f.write(
+                            "%s\t%s\t%s\t%s\t%s\n"
+                            % (
+                                my_genome.id,
+                                res[0],
+                                res[0] + len(record),
+                                record.name,
+                                int(res[1] * 1000),
+                            )
+                        )
+
+                print("result:", result)
+
+                print("----------------------")
         print(no, "/", len(records))

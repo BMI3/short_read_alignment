@@ -1,10 +1,11 @@
 from os import error
+from matplotlib.pyplot import flag
 import numpy as np
 
 
 class MyBWT:
-    def __init__(self, ref) -> None:
-
+    def __init__(self, id, ref) -> None:
+        self.id = id
         self.characters, self.po, self.lc = self.generateLC(ref)
         self.tally = self.generateTally()
         self.char_range = self.charRange()
@@ -131,7 +132,7 @@ class MyBWT:
 
         start = current_range[0] - 1
         # need to see on before so that we do not leave out the first char
-        end = min(current_range[1] - 1, self.lc.size - 12)
+        end = min(current_range[1] - 1, self.lc.size - 2)
         # right open
 
         if next_char not in tally:
@@ -155,19 +156,18 @@ class MyBWT:
         seed_search = []
         n_seed = (len(shortRead) - overlap) // (max_match - overlap) + 1
         for i in range(n_seed):
-            print(
-                i * (max_match - overlap),
-                max(i * (max_match - overlap) + max_match, len(shortRead) + 1),
-            )
             seed = shortRead[
                 i
-                * (max_match - overlap) : max(
-                    i * (max_match - overlap) + max_match, len(shortRead) + 1
+                * (max_match - overlap) : min(
+                    i * (max_match - overlap) + max_match, len(shortRead)
                 )
             ]
             result = self.query(seed)
             if result.size > 0:
-                seed_search += list(result - i * (max_match - overlap))
+                start = result - i * (max_match - overlap)
+                if len(np.where(start < 0)[0]):
+                    start = start[np.where(start >= 0)]
+                seed_search += list(start)
 
         if not seed_search:
             return seed_search
@@ -182,16 +182,17 @@ class MyBWT:
                 freq[possible.index(p)] += 1
         print("possible", possible)
         print("freq:", freq)
-        if max(freq) == n_seed:
-            position = [possible[i] for i in range(len(freq)) if freq[i] == max(freq)]
-            if 680580 in position:
-                raise error
+        return self.extend(shortRead, possible)
+        # if max(freq) == n_seed:
+        #     position = [possible[i] for i in range(len(freq)) if freq[i] == max(freq)]
+        #     # if 680580 in position:
+        #     #     raise error
 
-            self.extend(shortRead, position)
+        #     # self.extend(shortRead, position)
 
-            return position
-        else:
-            return possible
+        #     return position
+        # else:
+        #     return possible
 
     # def traceback(self):
     #     """
@@ -208,21 +209,19 @@ class MyBWT:
     #         seq = letter + seq
     #     self.origin = seq
 
-    def extend(self, shortRead, position):
+    def extend(self, shortRead, position, threshold=0.95):
         """ """
+        acceptable = []
         for p in position:
-
             p -= 1
             # if self.origin == None:
             #     self.traceback()
-            yes = self.origin[p : p + len(shortRead)] == shortRead
-            print("=origin?", yes)
-            if not yes:
 
-                print(self.origin[p : p + 88] == shortRead[:88])
-                print("0123456789")
-                print(self.origin[p + 80 : p + 100])
-                print(shortRead[80:])
-                print(len(shortRead))
-                raise error
-            return position
+            o = self.origin[p : p + len(shortRead)]
+            match = sum((np.array(list(o)) == np.array(list(shortRead)))) / len(
+                shortRead
+            )
+            if match > threshold:
+                acceptable.append((p, match))
+                # print(p, ":", match / len(shortRead) * 100, "%")
+        return acceptable
