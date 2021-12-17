@@ -76,7 +76,7 @@ def cost_generate_LC(iter, mode="t", logs=True, fs=6):
 
 
 def graph_generate_LC(iter, data, show=False, mode="t", logs=True, fs=6):
-    ax = plt.subplots()
+    fig, ax = plt.subplots()
 
     if logs:
         x = np.arange(len(iter))
@@ -89,6 +89,9 @@ def graph_generate_LC(iter, data, show=False, mode="t", logs=True, fs=6):
         ax3 = ax.bar(x + width, data[0], width, label="my", color="#C95B45")
         ax.set_xticks(x)
         ax.set_xticklabels(iter)
+        # ax.bar_label(ax1, padding=3)
+        # ax.bar_label(ax2, padding=3)
+        ax.bar_label(ax3, padding=3)
     else:
         if fs % 2:
             ax1 = ax.plot(iter, data[2], label="rotation", color="#F7D6AA")
@@ -110,10 +113,6 @@ def graph_generate_LC(iter, data, show=False, mode="t", logs=True, fs=6):
 
     ax.legend()
 
-    # ax.bar_label(ax1, padding=3)
-    # ax.bar_label(ax2, padding=3)
-    # ax.bar_label(ax3, padding=3)
-
     if show:
         plt.show()
     else:
@@ -129,7 +128,7 @@ def test_generate_LC():
         2. generate with a suffix tree
     """
 
-    # logs = [10 ** i for i in range(2, 6)]
+    # logs = [10 ** i for i in range(2, 8)]
     # time_logs = cost_generate_LC(logs, mode="t", fs=4)
     # graph_generate_LC(logs, time_logs, mode="t", fs=4)
     # memory_logs = cost_generate_LC(logs, mode="m", fs=4)
@@ -146,11 +145,11 @@ def test_generate_LC():
                 )
         return result / n
 
-    gradient = range(6 * 10 ** 4, 7 * 10 ** 4, 5 * 10 ** 2)
-    time_gradient = repeat(gradient, 3)
+    gradient = range(6 * 10 ** 4, 10 * 10 ** 4, 5 * 10 ** 3)
+    time_gradient = repeat(gradient, 1)
     graph_generate_LC(gradient, time_gradient, mode="t", logs=False)
-    memory_gradient = repeat(gradient, 3, mode="m")
-    graph_generate_LC(gradient, memory_gradient, mode="m", logs=False)
+    # memory_gradient = repeat(gradient, 3, mode="m")
+    # graph_generate_LC(gradient, memory_gradient, mode="m", logs=False)
 
 
 def cost_query(iter, mode="t"):
@@ -208,6 +207,11 @@ def graph_query(iter, data, show=False, mode="t"):
             title="memory cost of methods to query",
         )
     ax.legend()
+    ax.set(
+        xlabel="number of the sequencing reads",
+        ylabel="time cost/s",
+        title="query short reads(500bp) from a random generated 10**5 bp reference",
+    )
 
     if show:
         plt.show()

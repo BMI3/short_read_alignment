@@ -1,5 +1,3 @@
-from os import error
-from matplotlib.pyplot import flag
 import numpy as np
 
 
@@ -12,7 +10,9 @@ class MyBWT:
         self.origin = ref
 
     def generateLC(self, ref):
-
+        """
+        generate the last characters of rotation in BWT and also record the positions in the origin string
+        """
         ref_r = ref[::-1]
         fc = np.array(list("$" + ref_r))
         lc = np.array(list(ref_r + "$"))
@@ -22,15 +22,18 @@ class MyBWT:
         group0 = {key: np.where(fc == key)[0] for key in characters}
 
         def my_sort(s, group=None, all_position=None):
-
-            # return local transmation if recursion
-            # if len(s)=len(fl) -> local=global
-
+            """
+            return local transformation during recursion
+            if s=fc -> local=global
+            when s=fc -> group=True
+                 len(s)<fc (deal subgroups) ->use all position
+            """
             if len(s) == 0:
                 pass
             if len(s) == 1:
                 return [0]
 
+            # if the string dose not contain repeat character, just argsort()
             if len(s) == len(np.unique(s)):
                 if group:
                     return list(np.argsort(s))
@@ -51,13 +54,12 @@ class MyBWT:
                     # subseq, has all_position
                     position = np.array(all_position)[np.where(s == letter)]
 
-                if len(position) < 2:
+                if len(position) < 2:  # must be unique
                     transformation += list(position)
                 else:
                     pre_position = position - 1
-                    pre_s = fc[pre_position]
+                    pre_s = fc[pre_position]  # the previous character in fc
                     local_transformation = my_sort(pre_s, all_position=pre_position)
-
                     local_transformation = list(np.array(local_transformation) + 1)
                     transformation += local_transformation
 
@@ -65,7 +67,7 @@ class MyBWT:
 
         transformation = my_sort(fc, group=group0)
 
-        po = len(fc) - np.array(transformation)
+        po = len(fc) - np.array(transformation)  # position in the origin string
         lc = lc[transformation]
         return characters, po, lc
 
@@ -114,43 +116,46 @@ class MyBWT:
         # the range of the first char can be found in char_range
         cc_range = [char_range[first_char][0], char_range[first_char][1]]
 
+        def findNextWithTally(current_range, next_char, char_range):
+            """
+            Given the current range (left closed, right open) in the F col and the next char searching for, with the help of tally and char_range,
+            return the rank of the next char satified (-1 for not found)
+            """
+            tally = self.tally
+            # get the tally for all chars
+            start = current_range[0] - 1
+            # need to see on before so that we do not leave out the first char
+            end = min(current_range[1] - 1, self.lc.size - 2)
+            # right open
+
+            if next_char not in tally:
+                return []
+            num_char_found = tally[next_char][end] - tally[next_char][start]
+            # how many next char found
+            if num_char_found > 0:
+                # rank_start, rank_end = tally[next_char][start], tally[next_char][end] - 1
+                rank_start, rank_end = tally[next_char][start], tally[next_char][end]
+                return (
+                    char_range[next_char][0] + rank_start,
+                    char_range[next_char][0] + rank_end + 1,
+                )  # range is left open, right closed
+            else:
+                return []
+
         # for the remaining char in seq
         for i in range(len(shortRead) - 2, -1, -1):
-            cc_range = self.findNextWithTally(cc_range, shortRead[i], char_range)
+            cc_range = findNextWithTally(cc_range, shortRead[i], char_range)
             if cc_range == []:
                 return np.array([])
         return self.po[cc_range[0] : cc_range[1]]
-        # return [self.po[rownum] for rownum in range(cc_range[0], cc_range[1])]
-
-    def findNextWithTally(self, current_range, next_char, char_range):
-        """
-        Given the current range (left closed, right open) in the F col and the next char searching for, with the help of tally and char_range,
-        return the rank of the next char satified (-1 for not found)
-        """
-        # get the tally for all chars
-        tally = self.tally
-
-        start = current_range[0] - 1
-        # need to see on before so that we do not leave out the first char
-        end = min(current_range[1] - 1, self.lc.size - 2)
-        # right open
-
-        if next_char not in tally:
-            return []
-        num_char_found = tally[next_char][end] - tally[next_char][start]
-        # how many next char found
-        if num_char_found > 0:
-            # rank_start, rank_end = tally[next_char][start], tally[next_char][end] - 1
-            rank_start, rank_end = tally[next_char][start], tally[next_char][end]
-            return (
-                char_range[next_char][0] + rank_start,
-                char_range[next_char][0] + rank_end + 1,
-            )  # range is left open, right closed
-        else:
-            return []
 
     def seeding(self, shortRead, k=2):
-        """ """
+        """
+        split short reads into pieces and do query
+        query will return the position of seeds
+        convert the possition by minus the distance of the start of the seed in the short read
+        therefore, all the seeds should have the same return position if no varience, insert, delete
+        """
         max_match = len(shortRead) // (k + 1)
         overlap = min(max(2, int(max_match * 0.2)), max_match - 1)
         seed_search = []
@@ -180,8 +185,8 @@ class MyBWT:
                 freq.append(1)
             else:
                 freq[possible.index(p)] += 1
-        print("possible", possible)
-        print("freq:", freq)
+        # print("possible", possible)
+        # print("freq:", freq)
         return self.extend(shortRead, possible)
         # if max(freq) == n_seed:
         #     position = [possible[i] for i in range(len(freq)) if freq[i] == max(freq)]
@@ -210,7 +215,12 @@ class MyBWT:
     #     self.origin = seq
 
     def extend(self, shortRead, position, threshold=0.95):
-        """ """
+        """
+        simply compare the part of origin reference on the returned position
+                    with the shortread
+        use Hamming distance to get a match score
+        return position with score higher than the threshold
+        """
         acceptable = []
         for p in position:
             p -= 1
@@ -218,6 +228,10 @@ class MyBWT:
             #     self.traceback()
 
             o = self.origin[p : p + len(shortRead)]
+            if len(o) != len(shortRead):
+                sl = min(len(o), len(shortRead))
+                o = o[:sl]
+                shortRead = shortRead[:sl]
             match = sum((np.array(list(o)) == np.array(list(shortRead)))) / len(
                 shortRead
             )

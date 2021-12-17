@@ -1,10 +1,11 @@
 from MyBWT import MyBWT
 import pickle
 import time
+import sys
 import argparse
-
-# from Bio.SeqIO.QualityIO import FastqGeneralIterator
 from Bio import SeqIO
+
+sys.setrecursionlimit(3000)
 
 fa_set = {"fa", "fasta"}
 fq_set = {"fq", "fastq"}
@@ -16,13 +17,6 @@ def readGenome(filename):
     """
     time0 = time.time()
     print("start")
-    # genome = ""
-    # with open(filename, "r") as f:
-    #     for line in f:
-    #         # ignore header line with genome information
-    #         if not line[0] == ">":
-    #             genome += line.rstrip()
-    # my_gonome = MyBWT(genome)
     genome = next(SeqIO.parse(filename, "fasta"))
     my_gonome = MyBWT(genome.id, str(genome.seq))
     with open(filename + ".bwt", "wb") as f:
@@ -34,10 +28,6 @@ def readGenome(filename):
 def reLoadRefObj(filename):
     with open(filename, mode="rb") as f:
         my_gonome = pickle.load(f, encoding="UTF-8")
-
-    # print("debug here to check the object")
-    # print(sys.getsizeof(my_gonome.lc))
-    # print(sys.getsizeof("".join(my_gonome.lc)))
     return my_gonome
 
 
@@ -53,12 +43,6 @@ parser.add_argument(
     "--query",
     action="store_true",
     help="align short reads to the genome",
-)
-parser.add_argument(
-    "-p",
-    "--pairend",
-    action="store_true",
-    help="if the sequencing data is pair-end",
 )
 parser.add_argument(
     "-r",
@@ -82,9 +66,7 @@ if __name__ == "__main__":
     fns = args.reference.split(".")
     if args.build:
         if fns[-1] in fa_set:
-
             readGenome(args.reference)
-
         else:
             print("input should be fasta file")
     elif args.query and args.shortRead:
@@ -95,10 +77,6 @@ if __name__ == "__main__":
         else:
             print("unrecognized genome file")
 
-        # with open(args.shortRead) as in_handle:
-        #     for title, seq, qual in FastqGeneralIterator(in_handle):
-        #         genome.seeding(seq)
-
         fns = args.shortRead.split(".")[-1]
         if fns in fa_set:
             suffix = "fasta"
@@ -106,14 +84,14 @@ if __name__ == "__main__":
             suffix = "fastq"
         records = list(SeqIO.parse(args.shortRead, suffix))
         with open("output.bed", mode="w") as f:
-            print(len(records))
+            print(len(records), "records")
             no = 0
             for i, record in enumerate(records):
-                print(record.name)
+                # print(record.name)
 
-                result = my_genome.seeding(record.seq)
-                if args.pairend:
-                    result += my_genome.seeding(record.reverse_complement().seq)
+                result = my_genome.seeding(record.seq) + my_genome.seeding(
+                    record.reverse_complement().seq
+                )
                 if result == []:
                     no += 1
                 else:
@@ -129,7 +107,7 @@ if __name__ == "__main__":
                             )
                         )
 
-                print("result:", result)
+                # print("result:", result)
 
-                print("----------------------")
+                # print("----------------------")
         print(no, "/", len(records))
